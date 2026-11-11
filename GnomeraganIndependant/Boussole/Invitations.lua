@@ -38,10 +38,21 @@ local T = {
 ---------------------------------------------------------------------------
 -- Données : membres de la guilde en ligne, dans ma zone, hors de mon groupe
 ---------------------------------------------------------------------------
-local found = {} -- noms complets (Nom-Royaume), réutilisés d'un appel à l'autre
-local foundShort, foundLevel, foundClass = {}, {}, {}
+-- Noms de WoW Forever : « Prénom Nom », sans royaume (les serveurs sont des rulesets).
+-- On ne découpe jamais un nom : soi et le groupe sont reconnus par GUID, le nom exact sert à inviter.
+local found = {} -- noms tels que donnés par la liste de guilde, réutilisés d'un appel à l'autre
+local foundLevel, foundClass = {}, {}
 local nFound = 0
-local invitedAt = {} -- [nom complet] = GetTime() de l'invitation
+local invitedAt = {} -- [nom] = GetTime() de l'invitation
+local groupGUID = {} -- [GUID] = true pour moi et les membres de mon groupe
+
+local PARTY_UNITS, RAID_UNITS = {}, {}
+for i = 1, 4 do
+	PARTY_UNITS[i] = "party" .. i
+end
+for i = 1, 40 do
+	RAID_UNITS[i] = "raid" .. i
+end
 
 local function Str(v)
 	if IsSecret(v) or type(v) ~= "string" or v == "" then
@@ -50,9 +61,31 @@ local function Str(v)
 	return v
 end
 
--- UnitInParty : booléen ; UnitInRaid : numéro dans le raid ou nil
-local function InMyGroup(short)
-	local p, r = UnitInParty(short), UnitInRaid(short)
+local function AddGUID(unit)
+	local g = Str(UnitGUID(unit))
+	if g then
+		groupGUID[g] = true
+	end
+end
+
+local function CollectGroup()
+	wipe(groupGUID)
+	AddGUID("player")
+	local list, n = PARTY_UNITS, 4
+	if IsInRaid() then
+		list, n = RAID_UNITS, 40
+	end
+	for i = 1, n do
+		AddGUID(list[i])
+	end
+end
+
+-- Repli sans GUID : nom exact, demandé au jeu (UnitInParty : booléen ; UnitInRaid : numéro ou nil)
+local function InMyGroupByName(name, me)
+	if name == me then
+		return true
+	end
+	local p, r = UnitInParty(name), UnitInRaid(name)
 	return (not IsSecret(p) and p) or (not IsSecret(r) and r ~= nil)
 end
 
@@ -62,21 +95,27 @@ local function Scan()
 	if not zone or not IsInGuild() then
 		return zone
 	end
-	local me = Str(UnitName("player"))
 	local total = GetNumGuildMembers()
 	if IsSecret(total) or type(total) ~= "number" then
 		return zone
 	end
+	CollectGroup()
+	local me = Str(UnitName("player"))
 	for i = 1, total do
-		local ok, name, _, _, level, _, mZone, _, _, online, _, class = pcall(GetGuildRosterInfo, i)
-		name, mZone = ok and Str(name), ok and Str(mZone)
+		-- 17e valeur : GUID du membre (à confirmer dans Forever, d'où le repli par nom)
+		local ok, name, _, _, level, _, mZone, _, _, online, _, class, _, _, _, _, _, guid =
+			pcall(GetGuildRosterInfo, i)
+		name, mZone, guid = ok and Str(name), ok and Str(mZone), ok and Str(guid)
 		if name and mZone == zone and not IsSecret(online) and online then
-			-- sans le royaume : Ambiguate(…, "none") le garde dans le jeu moderne
-			local short = name:match("^[^-]+")
-			if short ~= me and not InMyGroup(short) then
+			local inGroup
+			if guid then
+				inGroup = groupGUID[guid]
+			else
+				inGroup = InMyGroupByName(name, me)
+			end
+			if not inGroup then
 				nFound = nFound + 1
 				found[nFound] = name
-				foundShort[nFound] = short
 				foundLevel[nFound] = (not IsSecret(level) and type(level) == "number") and level or nil
 				foundClass[nFound] = Str(class)
 			end
@@ -150,8 +189,8 @@ local function Refresh()
 			local c = foundClass[i] and RAID_CLASS_COLORS and RAID_CLASS_COLORS[foundClass[i]]
 			local t = invitedAt[name]
 			local done = t and now - t < INVITE_COOLDOWN
-			row.name, row.short = name, foundShort[i]
-			row.text:SetText(foundShort[i])
+			row.name = name
+			row.text:SetText(name)
 			if done then
 				row.text:SetTextColor(0.5, 0.5, 0.5)
 			elseif c then
@@ -202,7 +241,7 @@ end
 
 local function OnRowClick(row)
 	if row.name and Invite(row.name) then
-		GI:Print(format(T.sent, row.short))
+		GI:Print(format(T.sent, row.name))
 	end
 	Refresh()
 end

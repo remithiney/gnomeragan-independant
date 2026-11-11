@@ -32,3 +32,11 @@ a causé plus de 1000 erreurs pendant un wipe. On lit les champs `.x` / `.y` (il
 sur les vrais `Vector2D`) en vérifiant leur type. Le code appelé dans un `OnUpdate` qui dépend
 d'une API mal connue passe par `pcall` et ne signale son erreur qu'une fois.
 Les erreurs Lua du jeu sont écrites dans `Logs/General.log` (`[E][Lua]`), même sans BugSack.
+
+## 2026-11-12 — Noms de personnages : « Prénom Nom », jamais découpés
+Dans WoW Forever, un personnage a un prénom et un nom de famille, sans royaume : les serveurs sont
+des rulesets. On ne découpe donc jamais un nom (pas de `-Royaume` à retirer, pas d'`Ambiguate`).
+Pour reconnaître un joueur (soi, un membre du groupe), on compare des **GUID** ; le nom exact sert
+seulement à l'affichage et à `C_PartyInfo.InviteUnit`. Repli par nom exact si le GUID manque.
+À confirmer en jeu : ce que renvoient `UnitName`, `GetGuildRosterInfo` (17e valeur = GUID ?) et
+l'expéditeur des messages de chat.

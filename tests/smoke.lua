@@ -214,14 +214,16 @@ C_SuperTrack = {
 }
 C_QuestLog = {}
 
--- Guilde : Pierre est déjà dans le groupe, Paul ailleurs, Jacques hors ligne ; Lise et Marc invitables
+-- Guilde, noms de Forever « Prénom Nom » sans royaume. Moi et Pierre (party1) reconnus par GUID
+-- (UnitName ne donne que le prénom) ; Paul ailleurs, Jacques hors ligne ; Rose sans GUID (repli par nom).
 local guild = {
-	{ "Moi-Royaume", "Dun Morogh", true },
-	{ "Pierre-Royaume", "Dun Morogh", true },
-	{ "Lise-Royaume", "Dun Morogh", true },
-	{ "Marc-Royaume", "Dun Morogh", true },
-	{ "Paul-Royaume", "Durotar", true },
-	{ "Jacques-Royaume", "Dun Morogh", false },
+	{ "Moi Lapointe", "Dun Morogh", true, "Player-player" },
+	{ "Pierre Dubois", "Dun Morogh", true, "Player-party1" },
+	{ "Lise Dupont", "Dun Morogh", true, "Player-3" },
+	{ "Marc Bernard", "Dun Morogh", true, "Player-4" },
+	{ "Paul Girard", "Durotar", true, "Player-5" },
+	{ "Jacques Roux", "Dun Morogh", false, "Player-6" },
+	{ "Rose Petit", "Dun Morogh", true, nil },
 }
 local invites = {}
 IsInGuild = function()
@@ -232,7 +234,7 @@ GetNumGuildMembers = function()
 end
 GetGuildRosterInfo = function(i)
 	local g = guild[i]
-	return g[1], "Membre", 1, 25, "Mage", g[2], "", "", g[3], 0, "MAGE"
+	return g[1], "Membre", 1, 25, "Mage", g[2], "", "", g[3], 0, "MAGE", 0, 0, false, false, 4, g[4]
 end
 GetRealZoneText = function()
 	return "Dun Morogh"
@@ -241,8 +243,8 @@ end
 Ambiguate = function(name)
 	return name
 end
-UnitInParty = function(name)
-	return name == "Pierre"
+UnitInParty = function()
+	return false
 end
 UnitInRaid = function()
 	return nil
@@ -307,7 +309,10 @@ M0.inviteButton.scripts.OnClick(M0.inviteButton)
 assert(M0.inviteList:IsShown(), "liste d'invitation fermée")
 M0.inviteList.all.scripts.OnClick(M0.inviteList.all)
 M0.inviteList.all.scripts.OnClick(M0.inviteList.all)
-assert(table.concat(invites, ",") == "Lise-Royaume,Marc-Royaume", "invitations : " .. table.concat(invites, ","))
+assert(
+	table.concat(invites, ",") == "Lise Dupont,Marc Bernard,Rose Petit",
+	"invitations : " .. table.concat(invites, ",")
+)
 
 for i = 1, #chatLog do
 	assert(not chatLog[i]:find("erreur"), "erreur signalée : " .. chatLog[i])
