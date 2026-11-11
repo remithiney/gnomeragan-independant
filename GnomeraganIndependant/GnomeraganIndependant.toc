@@ -4,5 +4,11 @@
 ## Author: remithiney et compagnie
 ## Version: @project-version@
 ## SavedVariables: GnomeraganIndependantDB
+## OptionalDeps: DAoCCompass
+## IconTexture: Interface\Icons\Trade_Engineering
 
 Core.lua
+
+Boussole\Boussole.lua
+Boussole\Bande.lua
+Boussole\Options.lua

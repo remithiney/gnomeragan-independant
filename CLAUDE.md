@@ -16,7 +16,9 @@ Le dépôt est notre seule mémoire commune : toute décision durable va dans `d
 - `GnomeraganIndependant/` : l'addon (c'est ce dossier qui est déployé dans `Interface/AddOns`).
   - `Core.lua` : espace de noms `GI`, base sauvegardée, événements, registre de modules.
   - Un fichier (ou un dossier) **par module**, chargé dans l'ordre du `.toc`. Un module ne touche que son propre code.
-- `scripts/` : `deploy.sh` (copie vers WoW), `check.sh` (luacheck + stylua).
+- `scripts/` : `deploy.sh` (copie vers WoW), `check.sh` (luacheck + stylua + test de fumée).
+- `tests/smoke.lua` : charge l'addon hors jeu avec une API imitée. L'addon met l'API en `local` au chargement :
+  pour changer un comportement en cours de test, modifier les variables du faux jeu, pas les fonctions.
 - `docs/DECISIONS.md` : journal des décisions. `docs/idees/` : idées et cahiers des charges (pas du code).
 
 ## Règles de code (addon léger, petites configs)
@@ -50,4 +52,5 @@ Le dépôt est notre seule mémoire commune : toute décision durable va dans `d
 - Développement dans WSL (instance `wow-addon`, Ubuntu 24.04), dépôt dans `~/projets/gnomeragan-independant`.
 - Déployer pour tester en jeu : `scripts/deploy.sh` puis `/reload` dans WoW. Dossier cible : variable `WOW_ADDONS`.
 - Depuis le Git Bash de Windows, préfixer les appels `wsl.exe` par `MSYS_NO_PATHCONV=1` (sinon les chemins sont réécrits).
+- Écrire un fichier depuis Windows (`\\wsl.localhost\...`) retire le droit d'exécution : `chmod +x scripts/*.sh`.
 - Préférences personnelles : `CLAUDE.local.md` (non versionné).
