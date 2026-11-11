@@ -25,3 +25,10 @@ Pourquoi : testé en jeu, `UnitPosition("target")` sur un joueur de la faction a
 `nil nil nil 0`. Blizzard cache la position des unités hors groupe (`C_Map.GetPlayerMapPosition` :
 « Only works for the player and party members »). Un addon ne peut pas contourner ce blocage.
 Piste à la place : un guildeux signale un ennemi et l'addon diffuse la position de ce guildeux.
+
+## 2026-11-12 — Vecteurs du jeu : lire `.x` / `.y`, jamais `:GetXY()`
+Dans Forever, `C_Map.GetUserWaypoint().position` est une table simple sans méthodes : `GetXY()`
+a causé plus de 1000 erreurs pendant un wipe. On lit les champs `.x` / `.y` (ils existent aussi
+sur les vrais `Vector2D`) en vérifiant leur type. Le code appelé dans un `OnUpdate` qui dépend
+d'une API mal connue passe par `pcall` et ne signale son erreur qu'une fois.
+Les erreurs Lua du jeu sont écrites dans `Logs/General.log` (`[E][Lua]`), même sans BugSack.
