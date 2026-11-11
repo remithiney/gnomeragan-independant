@@ -251,6 +251,7 @@ end
 -- Commandes
 SlashCmdList.GNOMERAGAN("")
 SlashCmdList.GIBOUSSOLE("loc")
+SlashCmdList.GIBOUSSOLE("diag")
 SlashCmdList.GIBOUSSOLE("options")
 SlashCmdList.GIBOUSSOLE("reset")
 SlashCmdList.GIBOUSSOLE("")

@@ -91,6 +91,11 @@ local function FindTargetUnit()
 	if found ~= targetUnit then
 		targetUnit, tSmooth = found, nil
 	end
+	if M.debug and UnitExists("target") then
+		GI:Print(
+			"[diag] cible : " .. (found and ("membre du groupe (" .. found .. ")") or "hors groupe, non affichée")
+		)
+	end
 end
 
 local function RebuildRoster()
@@ -973,6 +978,17 @@ M.SUPER_TRACKING_CHANGED = M.USER_WAYPOINT_UPDATED
 M.QUEST_LOG_UPDATE = M.USER_WAYPOINT_UPDATED
 
 function M:MINIMAP_PING(unit, x, y)
+	if M.debug then
+		GI:Print(
+			format(
+				"[diag] ping reçu : unité %s, x %s, y %s%s",
+				IsSecret(unit) and "(secret)" or tostring(unit),
+				IsSecret(x) and "(secret)" or tostring(x),
+				IsSecret(y) and "(secret)" or tostring(y),
+				db.showPings and "" or " — option « Pings » décochée"
+			)
+		)
+	end
 	if IsSecret(x) then
 		return
 	end

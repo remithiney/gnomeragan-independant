@@ -382,6 +382,23 @@ function M:OnSlash(msg)
 		)
 	elseif cmd == "loc" then
 		PrintLoc()
+	elseif cmd == "diag" or cmd == "debug" then
+		M.debug = not M.debug
+		GI:Print(
+			"diagnostic "
+				.. (M.debug and "activé : faites un ping sur la minicarte, changez de cible." or "désactivé.")
+		)
+		if M.debug then
+			GI:Print(
+				format(
+					"[diag] réglages DAoCCompass repris : %s ; pings %s ; cible %s ; groupé : %s",
+					db.imported and "oui" or "non",
+					db.showPings and "oui" or "non",
+					db.showTarget and "oui" or "non",
+					IsInGroup() and "oui" or "non"
+				)
+			)
+		end
 	elseif cmd == "reset" then
 		M.ResetLayout()
 		RefreshPanel()
