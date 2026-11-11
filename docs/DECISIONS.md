@@ -40,3 +40,12 @@ Pour reconnaître un joueur (soi, un membre du groupe), on compare des **GUID** 
 seulement à l'affichage et à `C_PartyInfo.InviteUnit`. Repli par nom exact si le GUID manque.
 À confirmer en jeu : ce que renvoient `UnitName`, `GetGuildRosterInfo` (17e valeur = GUID ?) et
 l'expéditeur des messages de chat.
+
+## 2026-11-12 — Réglages sauvegardés bornés au démarrage, appel aux armes limité aux places libres
+Les SavedVariables (et les réglages repris de DAoCCompass) sont traités comme non fiables : au démarrage,
+chaque réglage de mauvais type revient à sa valeur par défaut, chaque nombre est ramené dans la plage
+de son curseur, et un `point` mal formé est oublié. Sinon `fps = 0` figeait la bande et `scale = 0`
+ou un point invalide faisait planter le module à chaque connexion.
+« Sonner l'appel » n'invite que dans la limite des places libres (groupe de 5, raid de 40, moins les
+invitations envoyées sans réponse depuis moins de 60 s). L'addon ne passe jamais en raid tout seul :
+il l'indique et le joueur décide.

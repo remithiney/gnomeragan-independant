@@ -224,6 +224,8 @@ local guild = {
 	{ "Paul Girard", "Durotar", true, "Player-5" },
 	{ "Jacques Roux", "Dun Morogh", false, "Player-6" },
 	{ "Rose Petit", "Dun Morogh", true, nil },
+	-- groupe de 2 : 3 places libres, Anne (5e invitable) ne doit pas être appelée
+	{ "Anne Morel", "Dun Morogh", true, "Player-7" },
 }
 local invites = {}
 IsInGuild = function()
@@ -259,6 +261,13 @@ C_PartyInfo = {
 	end,
 }
 
+-- Réglages sauvegardés corrompus : doivent être corrigés au démarrage, sans erreur
+GnomeraganIndependantDB = {
+	modules = {
+		Boussole = { fps = 0, scale = 0, width = "large", alpha = 0 / 0, point = { "NULLE_PART", 3 } },
+	},
+}
+
 -- Chargement dans l'ordre du .toc
 local ns = {}
 local toc = assert(io.open(DIR .. ADDON .. ".toc"))
@@ -280,6 +289,11 @@ for _, f in ipairs(frames) do
 	end
 end
 assert(GnomeraganIndependantDB and GnomeraganIndependantDB.modules.Boussole, "réglages non créés")
+do
+	local b = GnomeraganIndependantDB.modules.Boussole
+	assert(b.fps == 10 and b.scale == 0.5 and b.width == 300 and b.alpha == 1, "réglages non bornés")
+	assert(b.point == nil, "point invalide gardé")
+end
 for _, f in ipairs(frames) do
 	local fn = f.scripts.OnEvent
 	if fn then
@@ -303,7 +317,7 @@ for i = 1, 200 do
 	end
 end
 
--- Invitations : ouvrir la liste, inviter tous, puis un second clic ne réinvite personne
+-- Invitations : ouvrir la liste, inviter dans la limite des places, puis un second clic n'invite personne
 local M0 = ns.modules.Boussole
 M0.inviteButton.scripts.OnClick(M0.inviteButton)
 assert(M0.inviteList:IsShown(), "liste d'invitation fermée")
