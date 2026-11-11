@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: |cff3fa0ffGnomeragan|r Indépendant
+## Notes: Addon de la guilde Gnomeragan Indépendant.
+## Author: remithiney et compagnie
+## Version: @project-version@
+## SavedVariables: GnomeraganIndependantDB
+
+Core.lua

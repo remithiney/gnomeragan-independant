@@ -1,0 +1,15 @@
+# Préférences personnelles
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Éditeurs et systèmes
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+Thumbs.db
+.DS_Store
+
+# Builds et paquets
+.release/
+*.zip
