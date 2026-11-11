@@ -1,5 +1,6 @@
 --[[
-  Boussole — le cor de l'appel aux armes, à droite de la bande : inviter les membres de la guilde présents dans la même zone.
+  Boussole — le cor de l'appel aux armes, à droite de la bande.
+  Invite les membres de la guilde présents dans la même zone.
   Le clic ouvre une liste ; le joueur choisit qui inviter (rien d'automatique).
   La liste est créée à la première ouverture ; GUILD_ROSTER_UPDATE n'est suivi que liste ouverte.
   GetGuildRosterInfo n'est pas documentée dans ForeverAPI : chaque valeur est vérifiée (type, secret).
