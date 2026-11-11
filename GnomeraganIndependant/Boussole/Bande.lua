@@ -868,6 +868,7 @@ function M.ApplySettings()
 	zoneText:SetShown(db.showZone)
 	RestackTexts()
 	cel:SetShown(db.celest)
+	M.ApplyInvite()
 	ApplyFonts()
 	ResetTexts()
 	UpdateZoneText()
@@ -935,6 +936,7 @@ end
 
 function M:GROUP_ROSTER_UPDATE()
 	RebuildRoster()
+	M.RefreshInvites() -- la liste d'invitation, si elle est ouverte
 end
 
 function M:PLAYER_ROLES_ASSIGNED()

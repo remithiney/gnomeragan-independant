@@ -157,6 +157,7 @@ local function CreatePanel()
 	Check("Coordonnées", "showCoords")
 	Check("Nom de la zone", "showZone")
 	Check("Soleil / lune", "celest")
+	Check("Bouton d'invitation de la guilde (à droite)", "showInvite")
 
 	Slider("Champ de vision", 60, 360, 10, function()
 		return db.fov
@@ -335,6 +336,7 @@ local HELP = {
 	"|cffffd100/boussole reset|r — position et taille par défaut",
 	"Médaillon bleu : Gnomeregan. Repère vert : Ctrl+clic sur la carte. Quête jaune : quête suivie.",
 	"Anneau orange autour d'un membre : il vient de faire un ping.",
+	"Icône à droite de la bande : inviter les membres de la guilde présents dans votre zone.",
 	"|cffffd100/boussole diag|r — diagnostic (événements reçus, réglages)",
 }
 

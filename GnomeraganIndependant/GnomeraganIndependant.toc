@@ -11,4 +11,5 @@ Core.lua
 
 Boussole\Boussole.lua
 Boussole\Bande.lua
+Boussole\Invitations.lua
 Boussole\Options.lua

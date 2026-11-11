@@ -21,6 +21,7 @@ local M = GI:NewModule("Boussole", {
 	dirSize = 15,
 	showDegrees = true,
 	celest = true,
+	showInvite = true, -- icône d'invitation de la guilde, à droite de la bande
 	-- textes sous la bande
 	showHeading = true,
 	showCoords = false,

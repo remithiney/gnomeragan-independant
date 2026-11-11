@@ -214,6 +214,48 @@ C_SuperTrack = {
 }
 C_QuestLog = {}
 
+-- Guilde : Pierre est déjà dans le groupe, Paul ailleurs, Jacques hors ligne ; Lise et Marc invitables
+local guild = {
+	{ "Moi-Royaume", "Dun Morogh", true },
+	{ "Pierre-Royaume", "Dun Morogh", true },
+	{ "Lise-Royaume", "Dun Morogh", true },
+	{ "Marc-Royaume", "Dun Morogh", true },
+	{ "Paul-Royaume", "Durotar", true },
+	{ "Jacques-Royaume", "Dun Morogh", false },
+}
+local invites = {}
+IsInGuild = function()
+	return true
+end
+GetNumGuildMembers = function()
+	return #guild, #guild
+end
+GetGuildRosterInfo = function(i)
+	local g = guild[i]
+	return g[1], "Membre", 1, 25, "Mage", g[2], "", "", g[3], 0, "MAGE"
+end
+GetRealZoneText = function()
+	return "Dun Morogh"
+end
+Ambiguate = function(name)
+	return (name:match("^[^-]+"))
+end
+UnitInParty = function(name)
+	return name == "Pierre"
+end
+UnitInRaid = function()
+	return nil
+end
+C_GuildInfo = { GuildRoster = function() end }
+C_PartyInfo = {
+	CanInvite = function()
+		return true
+	end,
+	InviteUnit = function(name)
+		invites[#invites + 1] = name
+	end,
+}
+
 -- Chargement dans l'ordre du .toc
 local ns = {}
 local toc = assert(io.open(DIR .. ADDON .. ".toc"))
@@ -257,6 +299,14 @@ for i = 1, 200 do
 		end
 	end
 end
+
+-- Invitations : ouvrir la liste, inviter tous, puis un second clic ne réinvite personne
+local M0 = ns.modules.Boussole
+M0.inviteButton.scripts.OnClick(M0.inviteButton)
+assert(M0.inviteList:IsShown(), "liste d'invitation fermée")
+M0.inviteList.all.scripts.OnClick(M0.inviteList.all)
+M0.inviteList.all.scripts.OnClick(M0.inviteList.all)
+assert(table.concat(invites, ",") == "Lise-Royaume,Marc-Royaume", "invitations : " .. table.concat(invites, ","))
 
 for i = 1, #chatLog do
 	assert(not chatLog[i]:find("erreur"), "erreur signalée : " .. chatLog[i])
