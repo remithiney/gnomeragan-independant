@@ -451,9 +451,67 @@ local function ImportDAoCCompass()
 	GI:Print("réglages de DAoCCompass repris. Vous pouvez désactiver l'ancien addon DAoCCompass.")
 end
 
+-- Bornes des réglages numériques (mêmes plages que les curseurs, échelles en valeur brute)
+local BOUNDS = {
+	fps = { 10, 60 },
+	fov = { 60, 360 },
+	width = { 120, 1000 },
+	height = { 16, 64 },
+	scale = { 0.5, 2 },
+	alpha = { 0.1, 1 },
+	bgAlpha = { 0, 1 },
+	dirSize = { 10, 26 },
+	range = { 0, 300 },
+	markerSize = { 6, 20 },
+}
+local ANCHORS = {
+	TOPLEFT = true,
+	TOP = true,
+	TOPRIGHT = true,
+	LEFT = true,
+	CENTER = true,
+	RIGHT = true,
+	BOTTOMLEFT = true,
+	BOTTOM = true,
+	BOTTOMRIGHT = true,
+}
+
+local function IsFinite(v)
+	return type(v) == "number" and v == v and v > -math.huge and v < math.huge
+end
+
+-- Réglages sauvegardés ou repris de DAoCCompass : non fiables (fichier modifié, ancienne version).
+-- Un fps à 0 figerait la bande, une échelle à 0 ou un point mal formé ferait planter le démarrage.
+local function SanitizeSettings()
+	for k, def in pairs(M.defaults) do
+		local v, b = db[k], BOUNDS[k]
+		if type(v) ~= type(def) or (b and not IsFinite(v)) then
+			db[k] = def
+		elseif b then
+			db[k] = max(b[1], min(b[2], v))
+		end
+	end
+	local p = db.point
+	if
+		p ~= nil
+		and not (
+			type(p) == "table"
+			and ANCHORS[p[1]]
+			and ANCHORS[p[2]]
+			and IsFinite(p[3])
+			and IsFinite(p[4])
+			and math.abs(p[3]) < 10000
+			and math.abs(p[4]) < 10000
+		)
+	then
+		db.point = nil
+	end
+end
+
 function M:OnEnable()
 	db = M.db
 	ImportDAoCCompass()
+	SanitizeSettings()
 	M.InitBande()
 	HookEditMode()
 	M.ApplySettings()

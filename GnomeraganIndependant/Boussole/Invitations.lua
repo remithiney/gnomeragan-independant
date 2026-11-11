@@ -27,6 +27,7 @@ local T = {
 	hint = "Sonnez le cor pour rallier les Gnomeragan présents dans la zone.",
 	noGuild = "Sans guilde, nul ne répondra à votre cor.",
 	notLeader = "Seul le chef du groupe peut sonner l'appel.",
+	full = "Groupe complet : passez en raid pour appeler d'autres compagnons.",
 	none = "Aucun compagnon à portée de cor.",
 	more = "… et %d autres",
 	invited = "appelé",
@@ -132,9 +133,34 @@ local function CanInviteNow()
 	return ok and not IsSecret(can) and can
 end
 
-local function Invite(name)
+local function Pending(name, now)
 	local t = invitedAt[name]
-	if t and GetTime() - t < INVITE_COOLDOWN then
+	return t and now - t < INVITE_COOLDOWN
+end
+
+-- Places libres : groupe de 5 ou raid de 40, moins les membres et les invitations sans réponse.
+-- Sans cette limite, « Sonner l'appel » enverrait toute la zone d'un coup (groupe plein, erreurs en rafale).
+local function FreeSlots(now)
+	local size, cap = 1, 5
+	if IsInRaid() then
+		size, cap = GetNumGroupMembers(), 40
+	elseif IsInGroup() then
+		size = GetNumSubgroupMembers() + 1
+	end
+	if IsSecret(size) or type(size) ~= "number" then
+		return 0
+	end
+	local free = cap - size
+	for i = 1, nFound do
+		if Pending(found[i], now) then
+			free = free - 1
+		end
+	end
+	return math.max(free, 0)
+end
+
+local function Invite(name)
+	if Pending(name, GetTime()) then
 		return false
 	end
 	if not pcall(C_PartyInfo.InviteUnit, name) then
@@ -178,8 +204,9 @@ local function Refresh()
 	end
 	local zone = Scan()
 	zoneLine:SetText(zone or T.unknownZone)
-	local canInvite = CanInviteNow()
 	local now = GetTime()
+	local free = FreeSlots(now)
+	local canInvite = CanInviteNow()
 	local pending = 0
 	local shown = math.min(nFound, MAX_ROWS)
 	for i = 1, MAX_ROWS do
@@ -187,8 +214,7 @@ local function Refresh()
 		if i <= shown then
 			local name = found[i]
 			local c = foundClass[i] and RAID_CLASS_COLORS and RAID_CLASS_COLORS[foundClass[i]]
-			local t = invitedAt[name]
-			local done = t and now - t < INVITE_COOLDOWN
+			local done = Pending(name, now)
 			row.name = name
 			row.text:SetText(name)
 			if done then
@@ -199,7 +225,7 @@ local function Refresh()
 				row.text:SetTextColor(1, 1, 1)
 			end
 			row.info:SetText(done and T.invited or (foundLevel[i] and tostring(foundLevel[i]) or ""))
-			row:SetEnabled(canInvite and not done)
+			row:SetEnabled(canInvite and free > 0 and not done)
 			row:Show()
 		else
 			row.name = nil
@@ -207,11 +233,11 @@ local function Refresh()
 		end
 	end
 	for i = 1, nFound do
-		local t = invitedAt[found[i]]
-		if not (t and now - t < INVITE_COOLDOWN) then
+		if not Pending(found[i], now) then
 			pending = pending + 1
 		end
 	end
+	local callable = math.min(pending, free)
 
 	local y = TOP - shown * ROW_H
 	moreText:ClearAllPoints()
@@ -228,19 +254,23 @@ local function Refresh()
 		moreText:SetText(T.notLeader)
 		moreText:Show()
 		y = y - math.max(ROW_H, (moreText:GetStringHeight() or 0) + 4)
+	elseif pending > 0 and free == 0 then
+		moreText:SetText(T.full)
+		moreText:Show()
+		y = y - math.max(ROW_H, (moreText:GetStringHeight() or 0) + 4)
 	else
 		moreText:Hide()
 	end
 
-	allButton:SetText(format(T.all, pending))
-	allButton:SetEnabled(canInvite and pending > 0)
+	allButton:SetText(format(T.all, callable))
+	allButton:SetEnabled(canInvite and callable > 0)
 	allButton:ClearAllPoints()
 	allButton:SetPoint("TOP", list, "TOP", 0, y - 4)
 	list:SetHeight(-y + 34)
 end
 
 local function OnRowClick(row)
-	if row.name and Invite(row.name) then
+	if row.name and FreeSlots(GetTime()) > 0 and Invite(row.name) then
 		GI:Print(format(T.sent, row.name))
 	end
 	Refresh()
@@ -248,7 +278,11 @@ end
 
 local function OnAllClick()
 	local n = 0
+	local free = FreeSlots(GetTime())
 	for i = 1, nFound do
+		if n >= free then
+			break
+		end
 		if Invite(found[i]) then
 			n = n + 1
 		end
