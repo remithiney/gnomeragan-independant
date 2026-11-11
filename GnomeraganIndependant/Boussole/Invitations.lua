@@ -1,5 +1,5 @@
 --[[
-  Boussole — icône à droite de la bande : inviter les membres de la guilde présents dans la même zone.
+  Boussole — le cor de l'appel aux armes, à droite de la bande : inviter les membres de la guilde présents dans la même zone.
   Le clic ouvre une liste ; le joueur choisit qui inviter (rien d'automatique).
   La liste est créée à la première ouverture ; GUILD_ROSTER_UPDATE n'est suivi que liste ouverte.
   GetGuildRosterInfo n'est pas documentée dans ForeverAPI : chaque valeur est vérifiée (type, secret).
@@ -12,7 +12,7 @@ local format = string.format
 local GetTime = GetTime
 local IsSecret = GI.IsSecret
 
-local ICON = "Interface\\Icons\\INV_Misc_GroupNeedMore"
+local ICON = "Interface\\Icons\\INV_Misc_Horn_01"
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local MAX_ROWS = 15
 local ROW_H = 16
@@ -20,17 +20,17 @@ local INVITE_COOLDOWN = 60 -- secondes avant de pouvoir réinviter la même pers
 local BRONZE = M.BRONZE
 
 local T = {
-	title = "Inviter la guilde de la zone",
-	hint = "Clic : membres de la guilde dans votre zone",
-	noGuild = "Vous n'êtes pas dans une guilde.",
-	notLeader = "Seul le chef du groupe peut inviter.",
-	header = "Guilde — %s",
-	none = "Personne d'autre de la guilde ici.",
+	title = "Appel aux armes",
+	hint = "Sonnez le cor pour rallier les Gnomeragan présents dans la zone.",
+	noGuild = "Sans guilde, nul ne répondra à votre cor.",
+	notLeader = "Seul le chef du groupe peut sonner l'appel.",
+	header = "Appel aux armes — %s",
+	none = "Aucun compagnon à portée de cor.",
 	more = "… et %d autres",
-	invited = "invité",
-	all = "Inviter tous (%d)",
-	sent = "invitation envoyée à %s.",
-	unknownZone = "zone inconnue",
+	invited = "appelé",
+	all = "Sonner l'appel (%d)",
+	sent = "le cor retentit : appel lancé à %s.",
+	unknownZone = "terres inconnues",
 }
 
 ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ local function OnAllClick()
 		end
 	end
 	if n > 0 then
-		GI:Print(format(T.sent, n == 1 and "1 membre" or (n .. " membres")))
+		GI:Print(format(T.sent, n == 1 and "1 compagnon" or (n .. " compagnons")))
 	end
 	Refresh()
 end
