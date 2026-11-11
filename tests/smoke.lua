@@ -237,8 +237,9 @@ end
 GetRealZoneText = function()
 	return "Dun Morogh"
 end
+-- comme dans le jeu moderne avec "none" : le royaume reste
 Ambiguate = function(name)
-	return (name:match("^[^-]+"))
+	return name
 end
 UnitInParty = function(name)
 	return name == "Pierre"

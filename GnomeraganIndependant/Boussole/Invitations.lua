@@ -17,6 +17,8 @@ local ICON = "Interface\\Icons\\INV_Misc_Horn_01"
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local MAX_ROWS = 15
 local ROW_H = 16
+local LIST_W = 230
+local TOP = -44 -- sous le titre et la zone
 local INVITE_COOLDOWN = 60 -- secondes avant de pouvoir réinviter la même personne
 local BRONZE = M.BRONZE
 
@@ -25,7 +27,6 @@ local T = {
 	hint = "Sonnez le cor pour rallier les Gnomeragan présents dans la zone.",
 	noGuild = "Sans guilde, nul ne répondra à votre cor.",
 	notLeader = "Seul le chef du groupe peut sonner l'appel.",
-	header = "Appel aux armes — %s",
 	none = "Aucun compagnon à portée de cor.",
 	more = "… et %d autres",
 	invited = "appelé",
@@ -38,7 +39,7 @@ local T = {
 -- Données : membres de la guilde en ligne, dans ma zone, hors de mon groupe
 ---------------------------------------------------------------------------
 local found = {} -- noms complets (Nom-Royaume), réutilisés d'un appel à l'autre
-local foundLevel, foundClass = {}, {}
+local foundShort, foundLevel, foundClass = {}, {}, {}
 local nFound = 0
 local invitedAt = {} -- [nom complet] = GetTime() de l'invitation
 
@@ -70,10 +71,12 @@ local function Scan()
 		local ok, name, _, _, level, _, mZone, _, _, online, _, class = pcall(GetGuildRosterInfo, i)
 		name, mZone = ok and Str(name), ok and Str(mZone)
 		if name and mZone == zone and not IsSecret(online) and online then
-			local short = Ambiguate(name, "none")
+			-- sans le royaume : Ambiguate(…, "none") le garde dans le jeu moderne
+			local short = name:match("^[^-]+")
 			if short ~= me and not InMyGroup(short) then
 				nFound = nFound + 1
 				found[nFound] = name
+				foundShort[nFound] = short
 				foundLevel[nFound] = (not IsSecret(level) and type(level) == "number") and level or nil
 				foundClass[nFound] = Str(class)
 			end
@@ -128,14 +131,14 @@ M.inviteButton = button
 ---------------------------------------------------------------------------
 -- Liste (créée à la première ouverture)
 ---------------------------------------------------------------------------
-local list, title, rows, moreText, allButton
+local list, zoneLine, rows, moreText, allButton
 
 local function Refresh()
 	if not list or not list:IsShown() then
 		return
 	end
 	local zone = Scan()
-	title:SetText(format(T.header, zone or T.unknownZone))
+	zoneLine:SetText(zone or T.unknownZone)
 	local canInvite = CanInviteNow()
 	local now = GetTime()
 	local pending = 0
@@ -147,8 +150,8 @@ local function Refresh()
 			local c = foundClass[i] and RAID_CLASS_COLORS and RAID_CLASS_COLORS[foundClass[i]]
 			local t = invitedAt[name]
 			local done = t and now - t < INVITE_COOLDOWN
-			row.name = name
-			row.text:SetText(Ambiguate(name, "guild"))
+			row.name, row.short = name, foundShort[i]
+			row.text:SetText(foundShort[i])
 			if done then
 				row.text:SetTextColor(0.5, 0.5, 0.5)
 			elseif c then
@@ -171,21 +174,21 @@ local function Refresh()
 		end
 	end
 
-	local y = -26 - shown * ROW_H
+	local y = TOP - shown * ROW_H
 	moreText:ClearAllPoints()
 	moreText:SetPoint("TOPLEFT", list, "TOPLEFT", 10, y)
 	if nFound == 0 then
 		moreText:SetText(T.none)
 		moreText:Show()
-		y = y - ROW_H
+		y = y - math.max(ROW_H, (moreText:GetStringHeight() or 0) + 4)
 	elseif nFound > MAX_ROWS then
 		moreText:SetText(format(T.more, nFound - MAX_ROWS))
 		moreText:Show()
-		y = y - ROW_H
+		y = y - math.max(ROW_H, (moreText:GetStringHeight() or 0) + 4)
 	elseif not canInvite then
 		moreText:SetText(T.notLeader)
 		moreText:Show()
-		y = y - ROW_H
+		y = y - math.max(ROW_H, (moreText:GetStringHeight() or 0) + 4)
 	else
 		moreText:Hide()
 	end
@@ -199,7 +202,7 @@ end
 
 local function OnRowClick(row)
 	if row.name and Invite(row.name) then
-		GI:Print(format(T.sent, Ambiguate(row.name, "guild")))
+		GI:Print(format(T.sent, row.short))
 	end
 	Refresh()
 end
@@ -219,7 +222,7 @@ end
 
 local function CreateList()
 	list = CreateFrame("Frame", nil, UIParent)
-	list:SetSize(200, 80)
+	list:SetSize(LIST_W, 80)
 	list:SetPoint("TOPLEFT", button, "BOTTOMRIGHT", 2, -2)
 	list:SetFrameStrata("DIALOG")
 	list:SetClampedToScreen(true)
@@ -229,10 +232,17 @@ local function CreateList()
 	bg:SetColorTexture(0.03, 0.025, 0.02, 0.92)
 	M.Frame4(list, BRONZE[1], BRONZE[2], BRONZE[3], 1, 2)
 
-	title = list:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local title = list:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	title:SetPoint("TOPLEFT", 10, -8)
 	title:SetPoint("RIGHT", -24, 0)
 	title:SetJustifyH("LEFT")
+	title:SetWordWrap(false)
+	title:SetText(T.title)
+	zoneLine = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	zoneLine:SetPoint("TOPLEFT", 10, -25)
+	zoneLine:SetPoint("RIGHT", -10, 0)
+	zoneLine:SetJustifyH("LEFT")
+	zoneLine:SetWordWrap(false)
 
 	local close = CreateFrame("Button", nil, list, "UIPanelCloseButton")
 	close:SetSize(22, 22)
@@ -241,12 +251,15 @@ local function CreateList()
 	rows = {}
 	for i = 1, MAX_ROWS do
 		local row = CreateFrame("Button", nil, list)
-		row:SetSize(180, ROW_H)
-		row:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -26 - (i - 1) * ROW_H)
-		row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		row.text:SetPoint("LEFT")
+		row:SetSize(LIST_W - 20, ROW_H)
+		row:SetPoint("TOPLEFT", list, "TOPLEFT", 10, TOP - (i - 1) * ROW_H)
 		row.info = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 		row.info:SetPoint("RIGHT")
+		row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		row.text:SetPoint("LEFT")
+		row.text:SetPoint("RIGHT", row.info, "LEFT", -6, 0)
+		row.text:SetJustifyH("LEFT")
+		row.text:SetWordWrap(false)
 		local hl = row:CreateTexture(nil, "HIGHLIGHT")
 		hl:SetAllPoints()
 		hl:SetColorTexture(1, 0.82, 0.3, 0.15)
@@ -254,6 +267,8 @@ local function CreateList()
 		rows[i] = row
 	end
 	moreText = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+	moreText:SetWidth(LIST_W - 20)
+	moreText:SetJustifyH("LEFT")
 
 	allButton = CreateFrame("Button", nil, list, "UIPanelButtonTemplate")
 	allButton:SetSize(150, 22)
