@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="GNOMERAGAN_BOUSSOLE" header="GNOMERAGAN" category="ADDONS">
+    GnomeraganIndependant_ToggleBoussole()
+  </Binding>
+</Bindings>
