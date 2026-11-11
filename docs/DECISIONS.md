@@ -18,3 +18,9 @@ commande `/gi`.
 
 ## 2026-11-11 — Pas de bibliothèque externe pour l'instant
 On en ajoute une seulement si elle évite beaucoup de code, avec une entrée ici.
+
+## 2026-11-12 — Sécurité du dépôt entre contributeurs
+Le dépôt est public et chacun travaille avec son Claude. Lancer `scripts/check.sh` sur une branche
+exécute son code (`tests/smoke.lua`, `.luacheckrc`), et `CLAUDE.md` / `.claude/` donnent des consignes
+au Claude de l'autre. Ces fichiers sont donc relus ligne à ligne, signalés dans la PR, et on lit le
+diff avant de lancer les vérifications. Pas de `.claude/settings.json` versionné sans décision ici.

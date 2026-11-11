@@ -33,6 +33,13 @@ Le dépôt est notre seule mémoire commune : toute décision durable va dans `d
 - Tout message d'addon reçu est **non fiable** : valider le format, les types, les bornes et l'expéditeur.
 - Jamais `loadstring`, `RunScript` ou exécution de contenu reçu. Taille et fréquence des envois limitées.
 - Rien d'automatique en /dire, /crier, canaux publics ou chuchotements en masse : l'addon propose, le joueur valide.
+- Les SavedVariables sont aussi non fiables (fichier modifié, ancienne version) : valider types et bornes au chargement.
+
+## Sécurité (dépôt)
+- `scripts/check.sh` **exécute** `tests/*.lua` et `.luacheckrc` (du Lua) : lire le diff d'une branche avant de le lancer.
+- Fichiers sensibles, à relire ligne à ligne : `CLAUDE.md`, `.claude/`, `scripts/`, `tests/`, `.luacheckrc`, `.github/`.
+  Ils pilotent le Claude ou la machine de l'autre. Pas de `.claude/settings.json` versionné (hooks) sans décision.
+- Ne jamais exécuter de script venant d'un dépôt de référence cloné (ForeverAPI…) : on le lit, on grep.
 
 ## Git et collaboration
 - `main` est toujours jouable. On ne pousse jamais directement dessus : branche + pull request relue par l'autre.
