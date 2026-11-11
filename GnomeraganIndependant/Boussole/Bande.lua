@@ -161,8 +161,13 @@ local function RefreshObjectives()
 
 	if db.showWaypoint and C_Map.HasUserWaypoint and C_Map.HasUserWaypoint() then
 		local p = C_Map.GetUserWaypoint()
-		if p and p.uiMapID and p.position then
-			local x, y = p.position:GetXY()
+		local pos = type(p) == "table" and p.position
+		-- Forever : position est parfois une table simple { x, y } sans GetXY (vu au wipe, 2026-11-11)
+		local x, y
+		if type(pos) == "table" then
+			x, y = pos.x, pos.y
+		end
+		if type(x) == "number" and type(y) == "number" and type(p.uiMapID) == "number" then
 			local n, w, inst = M.MapToWorld(p.uiMapID, x, y)
 			if n and inst == pInst then
 				wpN, wpW = n, w
@@ -787,6 +792,7 @@ end
 -- Boucle principale (limitée à db.fps, ne tourne que si la bande est visible)
 ---------------------------------------------------------------------------
 local acc, textT, objT, celT = 0, 1, 2, 5
+local objErrShown
 
 band:SetScript("OnUpdate", function(_, elapsed)
 	acc = acc + elapsed
@@ -817,7 +823,12 @@ band:SetScript("OnUpdate", function(_, elapsed)
 	objT = objT + dt
 	if objT >= 2 then
 		objT = 0
-		RefreshObjectives()
+		-- API de Forever mal connue : une erreur ici ne doit pas se répéter toutes les 2 s
+		local ok, err = pcall(RefreshObjectives)
+		if not ok and not objErrShown then
+			objErrShown = true
+			GI:Print("boussole : erreur des objectifs, signalée une seule fois (" .. tostring(err) .. ")")
+		end
 	end
 
 	UpdateMarkers(now, min(dt, 0.1), ref, half, span, heading)

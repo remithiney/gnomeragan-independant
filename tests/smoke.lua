@@ -94,8 +94,10 @@ CreateFrame = NewFrame
 UIParent = NewFrame()
 Minimap = NewFrame()
 GameTooltip = NewFrame()
+local chatLog = {}
 DEFAULT_CHAT_FRAME = Stub({
 	AddMessage = function(_, m)
+		chatLog[#chatLog + 1] = m
 		print("[chat] " .. m)
 	end,
 })
@@ -197,8 +199,12 @@ C_Map = {
 		end
 		return 0.1, 0.2, 0.45, 0.6
 	end,
+	-- repère de carte : dans Forever, position est une table simple { x, y } sans GetXY
 	HasUserWaypoint = function()
-		return false
+		return true
+	end,
+	GetUserWaypoint = function()
+		return { uiMapID = 1426, position = { x = 0.3, y = 0.4 } }
 	end,
 }
 C_SuperTrack = {
@@ -250,6 +256,10 @@ for i = 1, 200 do
 			return 4
 		end
 	end
+end
+
+for i = 1, #chatLog do
+	assert(not chatLog[i]:find("erreur"), "erreur signalée : " .. chatLog[i])
 end
 
 -- Commandes
