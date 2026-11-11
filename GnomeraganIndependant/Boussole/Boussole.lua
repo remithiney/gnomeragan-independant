@@ -157,9 +157,11 @@ end
 ---------------------------------------------------------------------------
 -- Gnomeregan : direction exacte sur le même continent, approximative ailleurs
 -- (via la carte d'Azeroth, comme une qibla).
--- ⚠️ Carte et coordonnées à confirmer en jeu : /gi boussole loc devant l'entrée.
+-- Relevé en jeu devant l'entrée (/boussole loc, 2026-11-11) : carte 1426 = Dun Morogh,
+-- 24.3, 39.7 ; monde -5182.1 / 604.3, continent 0.
 ---------------------------------------------------------------------------
-local HOME_MAP, HOME_X, HOME_Y = 1426, 0.243, 0.398 -- Dun Morogh, entrée de l'instance
+local HOME_MAP, HOME_X, HOME_Y = 1426, 0.243, 0.397 -- pour la carte d'Azeroth (autres continents)
+local HOME_N, HOME_W, HOME_INST = -5182.1, 604.3, 0 -- position monde exacte (même continent)
 local AZEROTH = 947
 
 local homeReady, homeN, homeW, homeInst
@@ -183,7 +185,7 @@ end
 
 local function InitHome()
 	homeReady = true
-	homeN, homeW, homeInst = M.MapToWorld(HOME_MAP, HOME_X, HOME_Y)
+	homeN, homeW, homeInst = HOME_N, HOME_W, HOME_INST
 	local r = AzRect(HOME_MAP)
 	if r then
 		homeAzX = r[1] + (r[2] - r[1]) * HOME_X
