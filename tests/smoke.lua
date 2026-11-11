@@ -146,6 +146,9 @@ end
 UnitGUID = function(u)
 	return "Player-" .. u
 end
+UnitName = function(u)
+	return u == "party1" and "Pierre" or "Moi"
+end
 UnitClass = function()
 	return "Mage", "MAGE"
 end
@@ -230,7 +233,8 @@ for _, f in ipairs(frames) do
 	local fn = f.scripts.OnEvent
 	if fn then
 		fn(f, "PLAYER_ENTERING_WORLD")
-		fn(f, "MINIMAP_PING", "party1", 0.1, 0.2)
+		-- ping d'un membre : identifié par son GUID (12e argument)
+		fn(f, "CHAT_MSG_PING", "Attaque", "Pierre-Royaume", "", "", "", "", 0, 0, "", 0, 1, "Player-party1")
 	end
 end
 

@@ -47,6 +47,7 @@ end
 ---------------------------------------------------------------------------
 local frame = CreateFrame("Frame")
 local listeners = {} -- [event] = { module, ... }
+GI.refusedEvents = {} -- événements que le jeu a refusés (inconnus de ce client)
 
 local function Dispatch(_, event, ...)
 	local list = listeners[event]
@@ -68,9 +69,10 @@ function Module:RegisterEvent(event)
 	if not list then
 		list = {}
 		listeners[event] = list
-		-- certains événements peuvent ne pas exister dans ce client
+		-- certains événements n'existent pas dans WoW Forever : on les note pour le diagnostic
 		if not pcall(frame.RegisterEvent, frame, event) then
 			listeners[event] = nil
+			GI.refusedEvents[#GI.refusedEvents + 1] = event
 			return false
 		end
 	end

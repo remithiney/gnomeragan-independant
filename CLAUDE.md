@@ -8,7 +8,11 @@ Le dépôt est notre seule mémoire commune : toute décision durable va dans `d
 - `## Interface: 16001`. **API moderne** (pas celle de Classic Era) avec les **restrictions de Midnight** :
   valeurs secrètes, pas de journal de combat, communications d'addon verrouillées en instance.
 - Pas de doc officielle. Référence : https://github.com/zmarotrix/ForeverAPI (API observée en jeu).
-  Une fonction non confirmée là-bas est **à vérifier en jeu** avant d'en dépendre ; protéger par `if X then` / `pcall`.
+  **Obligatoire avant d'utiliser un événement ou une fonction** : vérifier son statut dans
+  `docs/events.md` ou `docs/systems/*.md` de ce dépôt (✅ existe, ⛔ absent de Forever). Copie locale :
+  `git clone --depth 1 https://github.com/zmarotrix/ForeverAPI /tmp/ForeverAPI` puis grep.
+  Exemple : `MINIMAP_PING` est ⛔ ; la position des pings en jeu est protégée (seul `CHAT_MSG_PING` dit qui a pingé).
+  Non confirmé là-bas → à vérifier en jeu ; protéger par `if X then` / `pcall`. `/boussole diag` liste les événements refusés.
 - Toujours tester `issecretvalue(v)` **avant** de comparer une valeur venant du jeu (comparer un secret = erreur Lua).
 - `UnitPosition` : seulement soi et le groupe, jamais en instance / BG. Les monstres n'ont pas de position.
 

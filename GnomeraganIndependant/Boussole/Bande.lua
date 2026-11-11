@@ -7,15 +7,14 @@ local _, GI = ...
 local M = GI.modules.Boussole
 
 local PI = math.pi
-local RAD2DEG = 180 / PI
-local atan2, sin = math.atan2, math.sin
+local sin = math.sin
 local floor, abs, min, max = math.floor, math.abs, math.min, math.max
 local format = string.format
 local GetTime, UnitPosition, UnitExists, UnitIsUnit, UnitGUID = GetTime, UnitPosition, UnitExists, UnitIsUnit, UnitGUID
 local IsSecret, Delta, DirName, BearingTo, Smooth = GI.IsSecret, M.Delta, M.DirName, M.BearingTo, M.Smooth
 
 local MIN_W, MIN_H, MAX_W, MAX_H = 120, 16, 1000, 64
-local PING_DURATION = 8
+local PING_DURATION = 5
 local RAID_ICON_PATH = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_"
 local HOME_ICON = "Interface\\Icons\\Trade_Engineering"
 local BRONZE = { 0.66, 0.51, 0.24 }
@@ -181,12 +180,16 @@ local function RefreshObjectives()
 			if not (mapID and x and y) then
 				mapID, x, y = M.curMap, nil, nil
 				if mapID then
+					-- protégés : ForeverAPI signale des erreurs selon les arguments
 					if C_TaskQuest and C_TaskQuest.GetQuestLocation then
-						x, y = C_TaskQuest.GetQuestLocation(qid, mapID)
+						local ok, a, b = pcall(C_TaskQuest.GetQuestLocation, qid, mapID)
+						if ok then
+							x, y = a, b
+						end
 					end
 					if not x and C_QuestLog.GetQuestsOnMap then
-						local list = C_QuestLog.GetQuestsOnMap(mapID)
-						if list then
+						local ok, list = pcall(C_QuestLog.GetQuestsOnMap, mapID)
+						if ok and type(list) == "table" then
 							for i = 1, #list do
 								if list[i].questID == qid then
 									x, y = list[i].x, list[i].y
@@ -207,7 +210,9 @@ local function RefreshObjectives()
 	end
 end
 
-local pingTime, pingX, pingY
+-- Pings : WoW Forever ne donne ni MINIMAP_PING ni la position des pings en jeu.
+-- On sait seulement QUI a pingé (CHAT_MSG_PING) : son point clignote sur la bande.
+local pingAt = {} -- [unit] = GetTime() du dernier ping
 
 ---------------------------------------------------------------------------
 -- Briques graphiques
@@ -395,6 +400,9 @@ local function NewMember()
 	m.edge = Circle(m, 1, 0, 0, 0, 1, "ARTWORK", 1)
 	m.fill = Circle(m, 1, 1, 1, 1, 1, "ARTWORK", 2)
 	m.icon = m:CreateTexture(nil, "OVERLAY")
+	m.ping = Circle(m, 1, 1, 0.6, 0.1, 1, "BACKGROUND", 0) -- anneau de ping, pulsant
+	m.ping:SetPoint("CENTER")
+	m.ping:Hide()
 	m.halo:SetPoint("CENTER")
 	m.edge:SetPoint("CENTER")
 	m.fill:SetPoint("CENTER")
@@ -414,6 +422,7 @@ local function StyleMember(m, info, dead)
 	m.edge:SetSize(s + 2, s + 2)
 	m.fill:SetSize(s, s)
 	m.icon:SetSize(s + 5, s + 5)
+	m.ping:SetSize(s + 12, s + 12)
 	if dead then
 		m.fill:SetColorTexture(0.4, 0.4, 0.4, 1)
 	else
@@ -502,29 +511,6 @@ local function SizeHome()
 	homeMark.icon:SetSize(s - 1, s - 1)
 end
 
--- Ping : anneau pulsant
-local pingMark = CreateFrame("Frame", nil, border)
-pingMark:SetFrameLevel(border:GetFrameLevel() + 7)
-pingMark.outer = Circle(pingMark, 1, 1, 0.6, 0.1, 1, "OVERLAY", 0)
-pingMark.inner = Circle(pingMark, 1, 0.06, 0.05, 0.04, 1, "OVERLAY", 1)
-pingMark.dot = Circle(pingMark, 1, 1, 1, 1, 1, "OVERLAY", 2)
-pingMark.outer:SetPoint("CENTER")
-pingMark.inner:SetPoint("CENTER")
-pingMark.dot:SetPoint("CENTER")
-pingMark:Hide()
-
-local function SizePing()
-	if pingMark.sStyle == styleVersion then
-		return
-	end
-	pingMark.sStyle = styleVersion
-	local s = db.markerSize + 6
-	pingMark:SetSize(s + 2, s + 2)
-	pingMark.outer:SetSize(s, s)
-	pingMark.inner:SetSize(s - 5, s - 5)
-	pingMark.dot:SetSize(4, 4)
-end
-
 -- Place un marqueur sur la bande. lane : "TOP", "BOTTOM" ou "CENTER".
 local function Place(m, bearing, ref, half, span, lane)
 	local d = Delta(bearing, ref)
@@ -573,6 +559,14 @@ local function UpdateMarkers(now, dt, ref, half, span, heading)
 					b = Smooth(memberSmooth[u], b, dt, dist)
 					memberSmooth[u] = b
 					Place(m, b, ref, half, span, "BOTTOM")
+					-- ping récent de ce membre : anneau pulsant qui s'estompe
+					local t = pingAt[u] and now - pingAt[u]
+					if t and t < PING_DURATION and db.showPings then
+						m.ping:SetAlpha((0.55 + 0.45 * sin(t * 9)) * min(1, (PING_DURATION - t) / 1.5))
+						m.ping:Show()
+					elseif m.ping:IsShown() then
+						m.ping:Hide()
+					end
 				end
 			end
 		end
@@ -583,6 +577,7 @@ local function UpdateMarkers(now, dt, ref, half, span, heading)
 			local m = GetMember(used)
 			StyleMember(m, demoInfo[i], false)
 			Place(m, (ref + demoInfo[i].b0) % 360, ref, half, span, "BOTTOM")
+			m.ping:SetShown(i == 2) -- aperçu de l'anneau de ping
 		end
 	end
 	for i = used + 1, #memberMarkers do
@@ -659,29 +654,6 @@ local function UpdateMarkers(now, dt, ref, half, span, heading)
 	else
 		hSmooth = nil
 		homeMark:Hide()
-	end
-
-	-- Ping de minicarte (n'a besoin que du cap)
-	-- ⚠️ à vérifier en jeu avec la minicarte tournante : on suppose des coordonnées orientées nord
-	if haveDir and db.showPings and pingTime and now - pingTime < PING_DURATION then
-		local x, y = pingX, pingY
-		if Minimap and Minimap.GetPingPosition then
-			local ok, a, c = pcall(Minimap.GetPingPosition, Minimap)
-			if ok and not IsSecret(a) and a and c and (a ~= 0 or c ~= 0) then
-				x, y = a, c
-			end
-		end
-		if x and y and (x ~= 0 or y ~= 0) then
-			SizePing()
-			Place(pingMark, (atan2(x, y) * RAD2DEG) % 360, ref, half, span, "CENTER")
-			local pulse = 0.55 + 0.45 * sin((now - pingTime) * 9)
-			local fade = min(1, (PING_DURATION - (now - pingTime)) / 1.5)
-			pingMark:SetAlpha(pingMark:GetAlpha() * pulse * fade)
-		else
-			pingMark:Hide()
-		end
-	else
-		pingMark:Hide()
 	end
 end
 
@@ -977,28 +949,43 @@ end
 M.SUPER_TRACKING_CHANGED = M.USER_WAYPOINT_UPDATED
 M.QUEST_LOG_UPDATE = M.USER_WAYPOINT_UPDATED
 
-function M:MINIMAP_PING(unit, x, y)
+-- Qui a pingé ? Par GUID, sinon par nom (sans le royaume). Données masquées en combat : ignorées.
+local function FindPinger(name, guid)
+	if IsSecret(guid) then
+		guid = nil
+	end
+	if IsSecret(name) then
+		name = nil
+	end
+	name = name and name:match("^[^-]+")
+	for i = 1, #units do
+		local u = units[i]
+		if guid and unitGUID[u] == guid then
+			return u
+		end
+		if not guid and name then
+			local n = UnitName(u)
+			if not IsSecret(n) and n == name then
+				return u
+			end
+		end
+	end
+end
+
+function M:CHAT_MSG_PING(_, playerName, _, _, _, _, _, _, _, _, _, guid)
+	local u = FindPinger(playerName, guid)
+	if u then
+		pingAt[u] = GetTime()
+	end
 	if M.debug then
 		GI:Print(
 			format(
-				"[diag] ping reçu : unité %s, x %s, y %s%s",
-				IsSecret(unit) and "(secret)" or tostring(unit),
-				IsSecret(x) and "(secret)" or tostring(x),
-				IsSecret(y) and "(secret)" or tostring(y),
+				"[diag] ping de %s : %s%s",
+				IsSecret(playerName) and "(secret)" or tostring(playerName),
+				u and ("membre affiché (" .. u .. ")") or "pas un membre affiché",
 				db.showPings and "" or " — option « Pings » décochée"
 			)
 		)
-	end
-	if IsSecret(x) then
-		return
-	end
-	pingTime, pingX, pingY = GetTime(), x, y
-	local _, cls = UnitClass(unit or "player")
-	local c = not IsSecret(cls) and cls and RAID_CLASS_COLORS and RAID_CLASS_COLORS[cls]
-	if c then
-		pingMark.outer:SetColorTexture(c.r, c.g, c.b, 1)
-	else
-		pingMark.outer:SetColorTexture(1, 0.6, 0.1, 1)
 	end
 end
 
@@ -1014,7 +1001,7 @@ local EVENTS = {
 	"USER_WAYPOINT_UPDATED",
 	"SUPER_TRACKING_CHANGED",
 	"QUEST_LOG_UPDATE",
-	"MINIMAP_PING",
+	"CHAT_MSG_PING",
 }
 
 -- Appelé au démarrage du module (Options.lua), une fois les réglages chargés

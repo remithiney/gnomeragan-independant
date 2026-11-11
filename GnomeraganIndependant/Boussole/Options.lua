@@ -145,7 +145,7 @@ local function CreatePanel()
 	Check("Icônes de raid (crâne, croix…)", "raidIcons")
 	Check("Entourer les soignants", "healers")
 	Check("Ma cible (si membre du groupe)", "showTarget")
-	Check("Pings de la minicarte", "showPings")
+	Check("Pings du groupe (le membre clignote)", "showPings")
 	Check("Repère de carte", "showWaypoint")
 	Check("Quête suivie", "showQuest")
 	Check("Garder au bord ce qui est hors champ", "showEdges")
@@ -334,6 +334,8 @@ local HELP = {
 	"|cffffd100/boussole loc|r — position et cap dans le chat",
 	"|cffffd100/boussole reset|r — position et taille par défaut",
 	"Médaillon bleu : Gnomeregan. Repère vert : Ctrl+clic sur la carte. Quête jaune : quête suivie.",
+	"Anneau orange autour d'un membre : il vient de faire un ping.",
+	"|cffffd100/boussole diag|r — diagnostic (événements reçus, réglages)",
 }
 
 local function PrintLoc()
@@ -385,8 +387,7 @@ function M:OnSlash(msg)
 	elseif cmd == "diag" or cmd == "debug" then
 		M.debug = not M.debug
 		GI:Print(
-			"diagnostic "
-				.. (M.debug and "activé : faites un ping sur la minicarte, changez de cible." or "désactivé.")
+			"diagnostic " .. (M.debug and "activé : faites un ping en groupe, changez de cible." or "désactivé.")
 		)
 		if M.debug then
 			GI:Print(
@@ -397,6 +398,11 @@ function M:OnSlash(msg)
 					db.showTarget and "oui" or "non",
 					IsInGroup() and "oui" or "non"
 				)
+			)
+			local refused = GI.refusedEvents
+			GI:Print(
+				"[diag] événements refusés par le jeu : "
+					.. (#refused > 0 and table.concat(refused, ", ") or "aucun")
 			)
 		end
 	elseif cmd == "reset" then
