@@ -18,3 +18,8 @@ commande `/gi`.
 
 ## 2026-11-11 — Pas de bibliothèque externe pour l'instant
 On en ajoute une seulement si elle évite beaucoup de code, avec une entrée ici.
+
+## 2026-11-24 — Relecture des pull requests facultative
+Le second développeur ne participe plus vraiment : `main` ne demande plus d'approbation
+(`required_approving_review_count = 0`). On passe toujours par une branche et une pull request,
+avec `scripts/check.sh` vert et des conversations résolues, puis on fusionne soi-même.

@@ -35,7 +35,8 @@ Le dépôt est notre seule mémoire commune : toute décision durable va dans `d
 - Rien d'automatique en /dire, /crier, canaux publics ou chuchotements en masse : l'addon propose, le joueur valide.
 
 ## Git et collaboration
-- `main` est toujours jouable. On ne pousse jamais directement dessus : branche + pull request relue par l'autre.
+- `main` est toujours jouable. On ne pousse jamais directement dessus : branche + pull request.
+  La relecture par l'autre développeur est facultative (aucune approbation requise) : on fusionne soi-même.
 - Branches : `feat/<sujet>`, `fix/<sujet>`, `docs/<sujet>`, `proto/<sujet>` (prototype jetable, jamais fusionné).
 - Commits courts en français, préfixés : `feat:`, `fix:`, `perf:`, `refactor:`, `docs:`, `chore:`.
 - Versions SemVer ; la version du `.toc` ne change qu'au moment d'une release.
